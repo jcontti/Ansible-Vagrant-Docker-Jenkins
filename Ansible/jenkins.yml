@@ -1,0 +1,101 @@
+---
+- hosts: all
+  become: yes # permite que ejecute todo como sudo
+  vars:
+    ip_host: "{{ ip_address }}" ## capturo la ip que mandé con vagrant
+    conf_net: " sudo ifconfig eth1 {{ ip_host }} "
+
+  tasks:
+   - name: 01 - Update repo
+     raw: apt-get update
+
+   - name: 02 - Upgrade system
+     apt: upgrade=dist update_cache=yes
+
+   - name: 03 - Download ifconfig tool
+     shell: sudo apt-get install -y net-tools
+     args:
+      executable: /bin/bash
+
+   - name: 04 - Configure Private IP
+     shell: "{{ conf_net }}"
+     args:
+      executable: /bin/bash
+
+   - name: 05 - Install docker packages ## instalo cosas usando loop
+     apt:
+       name: "{{ item }}"
+       state: present
+       update_cache: yes
+     with_items:
+       - apt-transport-https
+       - ca-certificates
+       - curl
+       - software-properties-common
+     tags:
+       - docker
+
+   - name: 06 - Add Docker s official GPG key
+     apt_key:
+       url: https://download.docker.com/linux/ubuntu/gpg
+       state: present
+     tags:
+       - docker
+
+   - name: 07 - Verify that we have the key with the fingerprint
+     apt_key:
+       id: 0EBFCD88
+       state: present
+     tags:
+       - docker
+
+   - name: 08 - Set up the stable repository
+     apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+       state: present
+       update_cache: yes
+     tags:
+       - docker
+
+   - name: 09 - Update apt packages
+     apt:
+       update_cache: yes
+     tags:
+       - docker
+
+   - name: 10 - Install docker
+     apt:
+       name: docker-ce
+       state: present
+       update_cache: yes
+     tags:
+       - docker
+       
+   - name: 11- Install docker-compose
+     apt:
+       name: docker-compose=1.8.*
+       state: present
+       update_cache: yes
+     tags:
+       - docker
+
+     # # # # #  JENKINS
+
+   - name: Create Jenkins Docker image 
+     shell: docker build -t jcontti/jenkins .
+     args:
+      chdir: /vagrant/Docker/Jenkins/
+      executable: /bin/bash
+
+   - name: Run Jenkins Docker image 
+     shell: docker run --name jenkins -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock jcontti/jenkins
+     #shell: docker run --name jenkins -d -p 8080:8080 -v /home/vagrant:/var/jenkins_home jcontti/jenkins -v /var/run/docker.sock:/var/run/docker.sock
+     args:
+      executable: /bin/bash      
+
+   - name: Wait untils Jenkins is available
+     shell: curl --head --silent http://localhost:8080/login
+     register: result
+     until: result.stdout.find("200 OK") != -1
+     retries: 12
+     delay: 5

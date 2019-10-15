@@ -1,0 +1,86 @@
+BOX_IMAGE = "debian/stretch64"
+IP_DEV    = "10.46.20.21"
+IP_QA     = "10.46.20.22"
+IP_UAT    = "10.46.20.23"
+IP_PROD   = "10.46.20.24"
+IP_jenkins= "10.46.20.25"
+
+ Vagrant.configure(2) do |config|
+ config.vm.box = BOX_IMAGE
+
+   config.vm.define "dev" do |subconfig|
+     subconfig.vm.hostname = "dev"
+     subconfig.vm.network :private_network, ip: IP_DEV, auto_config: false
+
+     subconfig.vm.provision "ansible" do |ansible|
+         ansible.verbose = "vvv" ## util para debagear
+         ansible.playbook = "../Ansible/master.yml"
+         ansible.extra_vars = {
+           ansible_python_interpreter: "/usr/bin/python3.5",
+           ip_address: IP_DEV
+       }
+       end ## end provision
+
+     end ## end define
+
+     config.vm.define "qa" do |subconfig|
+       subconfig.vm.hostname = "qa"
+       subconfig.vm.network :private_network, ip: IP_QA, auto_config: false
+
+       subconfig.vm.provision "ansible" do |ansible|
+           ansible.verbose = "vvv" ## util para debagear
+           ansible.playbook = "../Ansible/master.yml"
+           ansible.extra_vars = {
+             ansible_python_interpreter: "/usr/bin/python3.5",
+             ip_address: IP_QA
+         }
+         end ## end provision
+
+       end ## end define
+
+       config.vm.define "uat" do |subconfig|
+         subconfig.vm.hostname = "uat"
+         subconfig.vm.network :private_network, ip: IP_UAT, auto_config: false
+
+         subconfig.vm.provision "ansible" do |ansible|
+             ansible.verbose = "vvv" ## util para debagear
+             ansible.playbook = "../Ansible/master.yml"
+             ansible.extra_vars = {
+               ansible_python_interpreter: "/usr/bin/python3.5",
+               ip_address: IP_UAT
+           }
+           end ## end provision
+
+         end ## end define
+
+         config.vm.define "prod" do |subconfig|
+           subconfig.vm.hostname = "prod"
+           subconfig.vm.network :private_network, ip: IP_PROD, auto_config: false
+
+           subconfig.vm.provision "ansible" do |ansible|
+               ansible.verbose = "vvv" ## util para debagear
+               ansible.playbook = "../Ansible/master.yml"
+               ansible.extra_vars = {
+                 ansible_python_interpreter: "/usr/bin/python3.5",
+                 ip_address: IP_PROD
+             }
+             end ## end provision
+
+           end ## end define
+
+           config.vm.define "jenkins" do |subconfig|
+            subconfig.vm.hostname = "jenkins"
+            subconfig.vm.network :private_network, ip: IP_jenkins, auto_config: false
+ 
+            subconfig.vm.provision "ansible" do |ansible|
+                ansible.verbose = "vvv" ## util para debagear
+                ansible.playbook = "../Ansible/jenkins.yml"
+                ansible.extra_vars = {
+                  ansible_python_interpreter: "/usr/bin/python3.5",
+                  ip_address: IP_jenkins
+              }
+              end ## end provision
+ 
+            end ## end define
+
+ end ## end vagrant.configure

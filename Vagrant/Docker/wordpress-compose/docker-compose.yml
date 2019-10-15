@@ -1,0 +1,44 @@
+# We are using Nginx official docker image, the latest version, and configure port mapping for port 80 on the container to port 80
+# on the host. Next, configure the docker volumes, the volume for our Nginx virtual host configuration, volume for Nginx log files
+# and the web root directory volume '/var/www/html'. The Nginx container is linked to WordPress container.
+nginx:
+    image: nginx:latest
+    ports:
+        - '80:80'
+    volumes:
+        - ./nginx:/etc/nginx/conf.d
+        - ./logs/nginx:/var/log/nginx
+        - ./wordpress:/var/www/html
+    links:
+        - wordpress
+    restart: always
+
+# Configure port mapping for the container on port 3306, and configure the MySQL root password with the environment
+# variable 'MYSQL_ROOT_PASSWORD'. Finally, configure the container volume for the MySQL data directory.
+mysql:
+    image: mariadb
+    ports:
+        - '3306:3306'
+    volumes:
+        - ./db-data:/var/lib/mysql
+    environment:
+        - MYSQL_ROOT_PASSWORD=aqwe123
+    restart: always
+
+# Then we will configure the WordPress service by using the WordPress 4.7 docker image with PHP-FPM 7.0 installed.
+# Configure the port for PHP-fpm on port 9000, enable the docker volume for the web directory '/var/www/html' to the host directory 'wordpress',
+# setup the database by defining WordPress environment variable, and link the WordPress service to mysql.
+wordpress:
+    image: wordpress:4.7.1-php7.0-fpm
+    ports:
+        - '9000:9000'
+    volumes:
+        - ./wordpress:/var/www/html
+    environment:
+        - WORDPRESS_DB_NAME=wpdb
+        - WORDPRESS_TABLE_PREFIX=wp_
+        - WORDPRESS_DB_HOST=mysql
+        - WORDPRESS_DB_PASSWORD=aqwe123
+    links:
+        - mysql
+    restart: always
